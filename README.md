@@ -1,6 +1,7 @@
 # engine_3d
 
-A new Flutter project.
+Example application drawing any 3d Obj-format model on the canvas 
+using simple 3D engine written in Dart.
 
 ## Getting Started
 
