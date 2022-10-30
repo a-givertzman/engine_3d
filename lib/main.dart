@@ -49,8 +49,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     Triangle(p: [Vec3d(x: 0.0, y: 1.0, z: 0.0), Vec3d(x: 0.0, y: 1.0, z: 1.0), Vec3d(x: 1.0, y: 1.0, z: 1.0),]),
     Triangle(p: [Vec3d(x: 0.0, y: 1.0, z: 0.0), Vec3d(x: 1.0, y: 1.0, z: 1.0), Vec3d(x: 1.0, y: 1.0, z: 0.0),]),
     // button
-    Triangle(p: [Vec3d(x: 0.0, y: 0.0, z: 0.0), Vec3d(x: 0.0, y: 1.0, z: 0.0), Vec3d(x: 1.0, y: 1.0, z: 0.0),]),
-    Triangle(p: [Vec3d(x: 0.0, y: 0.0, z: 0.0), Vec3d(x: 1.0, y: 1.0, z: 0.0), Vec3d(x: 1.0, y: 0.0, z: 0.0),]),
+    Triangle(p: [Vec3d(x: 1.0, y: 0.0, z: 1.0), Vec3d(x: 0.0, y: 0.0, z: 1.0), Vec3d(x: 0.0, y: 0.0, z: 0.0),]),
+    Triangle(p: [Vec3d(x: 1.0, y: 0.0, z: 1.0), Vec3d(x: 0.0, y: 0.0, z: 0.0), Vec3d(x: 1.0, y: 0.0, z: 0.0),]),
   ]);
   @override
   void initState() {
@@ -78,21 +78,21 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         title: Text(widget.title),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            // const Text(
-            //   'You have pushed the button this many times:',
-            // ),
-            Text(
-              '${_animation.value}',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 200,),
-            AnimatedBuilder(
-              animation: _animation, 
-              builder:(context, child) {
-                return CustomPaint(
+        child: AnimatedBuilder(
+          animation: _animation, 
+          builder:(context, child) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                // const Text(
+                //   'You have pushed the button this many times:',
+                // ),
+                Text(
+                  '${_animation.value.round()}',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 200,),
+                CustomPaint(
                   painter: Custom3DPainter(
                     mesh: _meshCube,
                     vCanera: Vec3d(x: 0.0, y: 0.0, z: 0.0),
@@ -100,10 +100,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     height: 400.0,
                     fTheta: _animation.value,
                   ),
-                );
-              },
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
       floatingActionButton: Row(
