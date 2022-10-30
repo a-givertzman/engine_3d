@@ -1,5 +1,9 @@
 import 'dart:math';
 
+import 'package:engine_3d/3d/mat4x4.dart';
+import 'package:engine_3d/3d/mesh.dart';
+import 'package:engine_3d/3d/triangle.dart';
+import 'package:engine_3d/3d/vec3d.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -32,6 +36,8 @@ class MyHomePage extends StatefulWidget {
 ///
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late AnimationController _animation;
+  late Mesh _meshModel;
+  final Mesh _meshShip = Mesh.fromObjFile('assets/models/ship.obj');
   final Mesh _meshCube = Mesh(tris: [
     // south
     Triangle(p: [Vec3d(x: 0.0, y: 0.0, z: 0.0), Vec3d(x: 0.0, y: 1.0, z: 0.0), Vec3d(x: 1.0, y: 1.0, z: 0.0),]),
@@ -52,9 +58,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     Triangle(p: [Vec3d(x: 1.0, y: 0.0, z: 1.0), Vec3d(x: 0.0, y: 0.0, z: 1.0), Vec3d(x: 0.0, y: 0.0, z: 0.0),]),
     Triangle(p: [Vec3d(x: 1.0, y: 0.0, z: 1.0), Vec3d(x: 0.0, y: 0.0, z: 0.0), Vec3d(x: 1.0, y: 0.0, z: 0.0),]),
   ]);
+  //
   @override
   void initState() {
     super.initState();
+    // _meshModel = _meshCube;
+    _meshModel = _meshShip;
+    _meshModel.load()
+    .then((value) {
+      // setState(() {});
+      print(_meshModel);
+    });
     _animation = AnimationController(
       lowerBound: 0.0,
       upperBound: 360.0 + 360,
@@ -67,22 +81,27 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       // }
       // if (mounted) setState(() {});
     });
-    _animation.repeat();
+    _animation.forward();
+    // _animation.repeat();
   }
   ///
   ///
   @override
   Widget build(BuildContext context) {
+    const  size = Size(400.0, 400.0);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
+      body: Container(
+        alignment: Alignment.center,
+        color: Colors.green[200],
         child: AnimatedBuilder(
           animation: _animation, 
           builder:(context, child) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 // const Text(
                 //   'You have pushed the button this many times:',
@@ -91,13 +110,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   '${_animation.value.round()}',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 200,),
+                // const SizedBox(height: 200,),
                 CustomPaint(
+                  size: size,
                   painter: Custom3DPainter(
-                    mesh: _meshCube,
+                    mesh: _meshModel,
                     vCanera: Vec3d(x: 0.0, y: 0.0, z: 0.0),
-                    width: 400.0,
-                    height: 400.0,
+                    size: size,
                     fTheta: _animation.value,
                   ),
                 ),
@@ -143,6 +162,7 @@ class Custom3DPainter extends CustomPainter {
   final Mat4x4 matProj = Mat4x4();
   final Vec3d _vCanera;
   final Vec3d _vLightDirection;
+  final Size size;
   double aRatio;
   double fNear;
   double fFar;
@@ -151,8 +171,7 @@ class Custom3DPainter extends CustomPainter {
   ///
   Custom3DPainter({
     required this.mesh,
-    required this.width,
-    required this.height,
+    required this.size,
     Vec3d? vCanera,
     Vec3d? vLightDirection,
     this.fNear = 0.1,
@@ -160,7 +179,9 @@ class Custom3DPainter extends CustomPainter {
     fFov = 90.0,  // degree
     fTheta = 0.0, // degree
   }) :
-    aRatio = height / width,
+    width = size.width,
+    height = size.height,
+    aRatio = size.height / size.width,
     _fFov = 1.0 / tan( 0.5 * pi * fFov / 180.0),
     _fTheta = pi * fTheta / 180.0,
     _vCanera = vCanera ?? Vec3d(x: 0.0, y: 0.0, z: 0.0),
@@ -199,6 +220,7 @@ class Custom3DPainter extends CustomPainter {
     matRotX.m[2][2] = cos(_fTheta * 0.5);
     matRotX.m[3][3] = 1;
 
+    print('tris count: ${tris.length}');
     for (final tri in tris) {
 
       final triRotatedZ = Triangle(p: [
@@ -214,9 +236,9 @@ class Custom3DPainter extends CustomPainter {
       ]);
 
       final triTranslated = Triangle(p: [
-        Vec3d(x: triRotatedZX.p[0].x, y: triRotatedZX.p[0].y, z: triRotatedZX.p[0].z + 3.0),
-        Vec3d(x: triRotatedZX.p[1].x, y: triRotatedZX.p[1].y, z: triRotatedZX.p[1].z + 3.0),
-        Vec3d(x: triRotatedZX.p[2].x, y: triRotatedZX.p[2].y, z: triRotatedZX.p[2].z + 3.0),
+        Vec3d(x: triRotatedZX.p[0].x, y: triRotatedZX.p[0].y, z: triRotatedZX.p[0].z + 8.0),
+        Vec3d(x: triRotatedZX.p[1].x, y: triRotatedZX.p[1].y, z: triRotatedZX.p[1].z + 8.0),
+        Vec3d(x: triRotatedZX.p[2].x, y: triRotatedZX.p[2].y, z: triRotatedZX.p[2].z + 8.0),
       ]);
 
       final line1 = Vec3d(
@@ -234,14 +256,21 @@ class Custom3DPainter extends CustomPainter {
         y: line1.z * line2.x - line1.x * line2.z,
         z: line1.x * line2.y - line1.y * line2.x,
       );
+      print('line1 : $line1');
+      print('line2 : $line2');
+      print('normal : $normal');
       final l = sqrt(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z);
       normal.x /= l; 
       normal.y /= l; 
       normal.z /= l;
 
-      if (normal.x * (triTranslated.p[0].x - _vCanera.x) +
-          normal.y * (triTranslated.p[0].y - _vCanera.y) +
-          normal.z * (triTranslated.p[0].z - _vCanera.z) < 0.0) {
+      // CROSS PRODUCR
+      final cp = normal.x * (triTranslated.p[0].x - _vCanera.x) +
+                  normal.y * (triTranslated.p[0].y - _vCanera.y) +
+                  normal.z * (triTranslated.p[0].z - _vCanera.z);
+      print('cp : $cp');
+
+      if (cp < 0.0) {
         
         final ll = sqrt(_vLightDirection.x*_vLightDirection.x + _vLightDirection.y*_vLightDirection.y + _vLightDirection.z*_vLightDirection.z);
         _vLightDirection.x /= ll; 
@@ -256,9 +285,9 @@ class Custom3DPainter extends CustomPainter {
           matProj.multipy(triTranslated.p[2]),
         ]);
         
-        triProjected.p[0].x += 0.0; triProjected.p[0].y += 0.0;
-        triProjected.p[1].x += 0.0; triProjected.p[1].y += 0.0;
-        triProjected.p[2].x += 0.0; triProjected.p[2].y += 0.0;
+        triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
+        triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
+        triProjected.p[2].x += 1.0; triProjected.p[2].y += 1.0;
         
         triProjected.p[0].x *= 0.5 * width; triProjected.p[0].y *= 0.5 * height;
         triProjected.p[1].x *= 0.5 * width; triProjected.p[1].y *= 0.5 * height;
@@ -269,6 +298,7 @@ class Custom3DPainter extends CustomPainter {
           ..style = PaintingStyle.fill
           ..color = Colors.blueGrey.withAlpha((255 * (0.7- dp * 0.5)).round())
         );
+        print('triProjected : $triProjected');
         canvas.drawPath(
           _getTrianglePath(triProjected),
           paintStroke
@@ -291,58 +321,13 @@ class Custom3DPainter extends CustomPainter {
     // canvas.translate(size.width / 2, size.height / 2);
     // canvas.drawCircle(Offset.zero, radius, Paint()..style=PaintingStyle.stroke);
     // canvas.translate(0, -radius);
+    canvas.drawRect(Rect.fromPoints(Offset.zero, Offset(width, height)), Paint()..style = PaintingStyle.stroke..color = Colors.orange);
+    // canvas.drawRect(Rect.fromPoints(Offset.zero, Offset(width, height)), Paint()..color = Colors.white54);
     _drawTriangles(canvas, size, mesh.tris);
   }
   ///
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
-  }
-}
-
-class Vec3d {
-  double x, y, z;
-  Vec3d({
-    required this.x,
-    required this.y,
-    required this.z,
-  });
-}
-
-class Triangle {
-  final List<Vec3d> p;
-  Triangle({
-    required this.p,
-  });
-}
-
-class Mesh {
-  final List<Triangle> tris;
-  Mesh({
-    required this.tris,
-  });
-}
-
-class Mat4x4 {
-  List<List> _m;
-  Mat4x4({
-    List<List> ? m,
-  }) :
-    _m = m ?? [[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0],];
-  List<List> get m => _m;
-  Vec3d multipy(Vec3d vec) {
-    final double w = vec.x * _m[0][3] + vec.y * _m[1][3] + vec.z * _m[2][3] + _m[3][3];
-    if (w != 0.0) {
-      return Vec3d(
-        x: (vec.x * _m[0][0] + vec.y * _m[1][0] + vec.z * _m[2][0] + _m[3][0]) / w,
-        y: (vec.x * _m[0][1] + vec.y * _m[1][1] + vec.z * _m[2][1] + _m[3][1]) / w,
-        z: (vec.x * _m[0][2] + vec.y * _m[1][2] + vec.z * _m[2][2] + _m[3][2]) / w,
-      );
-    }
-    return Vec3d(
-      x: vec.x * _m[0][0] + vec.y * _m[1][0] + vec.z * _m[2][0] + _m[3][0],
-      y: vec.x * _m[0][1] + vec.y * _m[1][1] + vec.z * _m[2][1] + _m[3][1],
-      z: vec.x * _m[0][2] + vec.y * _m[1][2] + vec.z * _m[2][2] + _m[3][2],
-    );
   }
 }
