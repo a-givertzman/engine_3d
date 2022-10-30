@@ -159,7 +159,7 @@ class Custom3DPainter extends CustomPainter {
   final Mesh mesh;
   final double width;
   final double height;
-  final Mat4x4 matProj = Mat4x4();
+  late Mat4x4 matProj;
   final Vec3d _vCanera;
   final Vec3d _vLightDirection;
   final Size size;
@@ -182,38 +182,18 @@ class Custom3DPainter extends CustomPainter {
     width = size.width,
     height = size.height,
     aRatio = size.height / size.width,
+    matProj = Mat4x4.projection(fFov, size.height / size.width, fNear, fFar),
     _fFov = 1.0 / tan( 0.5 * pi * fFov / 180.0),
     _fTheta = pi * fTheta / 180.0,
     _vCanera = vCanera ?? Vec3d(x: 0.0, y: 0.0, z: 0.0),
     _vLightDirection = vLightDirection ?? Vec3d(x: 0.0, y: 0.0, z: -1.0),
-    super() {
-      matProj.m[0][0] = aRatio * _fFov;
-      matProj.m[1][1] = _fFov;
-      matProj.m[2][2] = fFar / (fFar - fNear);
-      matProj.m[3][2] = -fFar * fNear / (fFar - fNear);
-      matProj.m[2][3] = 1.0;
-      matProj.m[3][3] = 0.0;
-    }
+    super();
   ///
   ///
   _drawTriangles(Canvas canvas, Size size, List<Triangle> tris) {
 
-    final matRotZ = Mat4x4();
-    matRotZ.m[0][0] = cos(_fTheta);
-    matRotZ.m[0][1] = sin(_fTheta);
-    matRotZ.m[1][0] = -sin(_fTheta);
-    matRotZ.m[1][1] = cos(_fTheta);
-    matRotZ.m[2][2] = 1;
-    matRotZ.m[3][3] = 1;
-
-    final matRotX = Mat4x4();
-    matRotX.m[0][0] = 1;
-    matRotX.m[1][1] = cos(_fTheta * 0.5);
-    matRotX.m[1][2] = sin(_fTheta * 0.5);
-    matRotX.m[2][1] = -sin(_fTheta * 0.5);
-    matRotX.m[2][2] = cos(_fTheta * 0.5);
-    matRotX.m[3][3] = 1;
-
+    final matRotZ = Mat4x4.rotateZ(_fTheta);
+    final matRotX = Mat4x4.rotateX(_fTheta);
     final List<Triangle> vTrisToRaster = [];
     
     // print('tris count: ${tris.length}');
