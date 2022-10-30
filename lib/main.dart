@@ -88,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   ///
   @override
   Widget build(BuildContext context) {
-    const  size = Size(400.0, 400.0);
+    const  size = Size(600.0, 600.0);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -197,12 +197,6 @@ class Custom3DPainter extends CustomPainter {
   ///
   ///
   _drawTriangles(Canvas canvas, Size size, List<Triangle> tris) {
-    final paintStroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..color = Colors.black;
-    final paintFill = Paint()
-      ..style = PaintingStyle.fill
-      ..color = Colors.blueGrey;
 
     final matRotZ = Mat4x4();
     matRotZ.m[0][0] = cos(_fTheta);
@@ -220,7 +214,9 @@ class Custom3DPainter extends CustomPainter {
     matRotX.m[2][2] = cos(_fTheta * 0.5);
     matRotX.m[3][3] = 1;
 
-    print('tris count: ${tris.length}');
+    final List<Triangle> vTrisToRaster = [];
+    
+    // print('tris count: ${tris.length}');
     for (final tri in tris) {
 
       final triRotatedZ = Triangle(p: [
@@ -235,6 +231,7 @@ class Custom3DPainter extends CustomPainter {
         matRotX.multipy(triRotatedZ.p[2]),
       ]);
 
+      /// Offset into the deepth of the screen
       final triTranslated = Triangle(p: [
         Vec3d(x: triRotatedZX.p[0].x, y: triRotatedZX.p[0].y, z: triRotatedZX.p[0].z + 8.0),
         Vec3d(x: triRotatedZX.p[1].x, y: triRotatedZX.p[1].y, z: triRotatedZX.p[1].z + 8.0),
@@ -256,9 +253,9 @@ class Custom3DPainter extends CustomPainter {
         y: line1.z * line2.x - line1.x * line2.z,
         z: line1.x * line2.y - line1.y * line2.x,
       );
-      print('line1 : $line1');
-      print('line2 : $line2');
-      print('normal : $normal');
+      // print('line1 : $line1');
+      // print('line2 : $line2');
+      // print('normal : $normal');
       final l = sqrt(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z);
       normal.x /= l; 
       normal.y /= l; 
@@ -268,7 +265,6 @@ class Custom3DPainter extends CustomPainter {
       final cp = normal.x * (triTranslated.p[0].x - _vCanera.x) +
                   normal.y * (triTranslated.p[0].y - _vCanera.y) +
                   normal.z * (triTranslated.p[0].z - _vCanera.z);
-      print('cp : $cp');
 
       if (cp < 0.0) {
         
@@ -278,12 +274,14 @@ class Custom3DPainter extends CustomPainter {
         _vLightDirection.z /= ll;
 
         final dp = normal.x * _vLightDirection.x + normal.y * _vLightDirection.y + normal.z * _vLightDirection.z;
-
-        final triProjected = Triangle(p: [
-          matProj.multipy(triTranslated.p[0]),
-          matProj.multipy(triTranslated.p[1]),
-          matProj.multipy(triTranslated.p[2]),
-        ]);
+        final triProjected = Triangle(
+          color: colorShiftLightness(Colors.blueGrey, 0.5 + dp * 0.5),
+          p: [
+            matProj.multipy(triTranslated.p[0]),
+            matProj.multipy(triTranslated.p[1]),
+            matProj.multipy(triTranslated.p[2]),
+          ], 
+        );
         
         triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
         triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
@@ -292,19 +290,43 @@ class Custom3DPainter extends CustomPainter {
         triProjected.p[0].x *= 0.5 * width; triProjected.p[0].y *= 0.5 * height;
         triProjected.p[1].x *= 0.5 * width; triProjected.p[1].y *= 0.5 * height;
         triProjected.p[2].x *= 0.5 * width; triProjected.p[2].y *= 0.5 * height;
-        canvas.drawPath(
-          _getTrianglePath(triProjected),
-          Paint()
-          ..style = PaintingStyle.fill
-          ..color = Colors.blueGrey.withAlpha((255 * (0.7- dp * 0.5)).round())
-        );
-        print('triProjected : $triProjected');
-        canvas.drawPath(
-          _getTrianglePath(triProjected),
-          paintStroke
-        );
+
+        vTrisToRaster.add(triProjected);
       }
+      vTrisToRaster.sort((t1, t2) {
+        final z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3;
+        final z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3;
+        return z2.compareTo(z1);
+      });
+      _drawRaster(
+        canvas, 
+        size, 
+        vTrisToRaster,
+      );
     }
+  }
+  ///
+  _drawRaster(Canvas canvas, Size size, List<Triangle> tris) {
+    final paintStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..color = Colors.black;
+    final paintFill = Paint()
+      ..style = PaintingStyle.fill
+      ..color = Colors.blueGrey;
+    for (final tri in tris) {
+      canvas.drawPath(
+        _getTrianglePath(tri),
+        Paint()
+        ..style = PaintingStyle.fill
+        ..color = tri.color
+      );
+      // print('tri : $tri');
+      // canvas.drawPath(
+      //   _getTrianglePath(tri),
+      //   paintStroke
+      // );
+    }
+
   }
   ///
   _getTrianglePath(Triangle triangle) {
@@ -330,4 +352,13 @@ class Custom3DPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
+}
+
+Color colorShiftLightness(Color color, double factor) {
+  assert(factor >= 0);
+  final hslColor = HSLColor.fromColor(color);
+  final lightness = hslColor.lightness * factor;
+  if (lightness < 0) return hslColor.withLightness(0).toColor();
+  if (lightness > 1) return hslColor.withLightness(1).toColor();
+  return hslColor.withLightness(lightness).toColor();
 }

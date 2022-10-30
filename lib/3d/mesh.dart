@@ -27,22 +27,26 @@ class Mesh {
           if (lineParts[0] == 'v') {
             verts.add(
               Vec3d(
-                x: double.parse(lineParts[1]), 
-                y: double.parse(lineParts[2]), 
-                z: double.parse(lineParts[3]),
+                x: double.tryParse(lineParts[1]) ?? 0.0, 
+                y: double.tryParse(lineParts[2]) ?? 0.0, 
+                z: double.tryParse(lineParts[3]) ?? 0.0,
               ),
             );
           }
+        }
+        for (final line in lines) {
+          final lineParts = line.split(' ');
           if (lineParts[0] == 'f') {
             tris.add(
               Triangle(p: [
                 verts[int.parse(lineParts[1]) - 1],
-                verts[int.parse(lineParts[3]) - 1], 
+                verts[int.parse(lineParts[2]) - 1], 
                 verts[int.parse(lineParts[3]) - 1],
               ]),
             );
           }
         }
+
         return true;
       });
     }
